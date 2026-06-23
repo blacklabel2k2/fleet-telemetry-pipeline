@@ -5,12 +5,13 @@ import uuid
 from datetime import datetime, timezone
 from pydantic import BaseModel, Field
 
-# 1. Define the Telemetry Schema using Pydantic
+# 1. Define the Telemetry Schema with realistic extreme limits
 class VehicleTelemetry(BaseModel):
     vehicle_id: str
     timestamp: str
-    engine_temperature: float = Field(..., ge=50.0, le=150.0)
-    vibration_amplitude: float = Field(..., ge=0.0, le=10.0)
+    # Enforce that it's a valid positive number, but remove the maximum cap entirely
+    engine_temperature: float = Field(..., ge=0.0) 
+    vibration_amplitude: float = Field(..., ge=0.0)
     fuel_flow_rate: float
     gps_coordinates: dict
 
@@ -72,3 +73,4 @@ if __name__ == "__main__":
         asyncio.run(main())
     except KeyboardInterrupt:
         print("\nSimulation terminated by user.")
+
