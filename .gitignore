@@ -1,0 +1,21 @@
+# Virtual Environment
+venv/
+.venv/
+env/
+__pycache__/
+*.pyc
+
+# IDEs and Editors
+.vscode/
+.idea/
+.DS_Store
+
+# Local Configuration / Secrets
+config/secrets.json
+*.env
+
+# Local Spark / Checkpoint directories (generated later)
+checkpoint/
+spark-warehouse/
+derby.log
+metastore_db/
