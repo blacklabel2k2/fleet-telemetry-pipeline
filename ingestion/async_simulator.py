@@ -1,3 +1,4 @@
+from ingestion.producer import send_telemetry_to_kafka, producer
 import asyncio
 import json
 import random
@@ -17,25 +18,20 @@ class VehicleTelemetry(BaseModel):
 
 # 2. Simulate an Individual Truck Device
 async def simulate_truck(vehicle_id: str, is_anomaly_vehicle: bool = False):
-    """Simulates a continuous stream of IoT readings from a specific truck."""
     print(f"[START] Initializing telemetry stream for Vehicle: {vehicle_id}")
     
     iteration = 0
     while True:
         iteration += 1
-        
-        # Base normal operating parameters
         temp = random.uniform(85.0, 98.0)
         vibration = random.uniform(1.2, 2.5)
         
-        # Inject an anomaly if this vehicle is designated to fail over time
         if is_anomaly_vehicle and iteration > 10:
-            # Gradually spike temperature and vibration to simulate failure
-            temp += random.uniform(5.0, 15.0) * (iteration - 10)
-            vibration += random.uniform(0.5, 1.8) * (iteration - 10)
-            print(f"⚠️ [ANOMALY INJECTED] Vehicle {vehicle_id} exhibiting critical wear profiles.")
+            severity_factor = min(iteration - 10, 8)
+            temp += random.uniform(8.0, 12.0) * severity_factor
+            vibration += random.uniform(0.4, 0.8) * severity_factor
+            print(f"⚠️ [CRITICAL ALERT] Vehicle {vehicle_id} operating in extreme failure zone.")
 
-        # Construct payload mapping to the strict schema
         payload = VehicleTelemetry(
             vehicle_id=vehicle_id,
             timestamp=datetime.now(timezone.utc).isoformat(),
@@ -43,15 +39,21 @@ async def simulate_truck(vehicle_id: str, is_anomaly_vehicle: bool = False):
             vibration_amplitude=round(vibration, 2),
             fuel_flow_rate=round(random.uniform(12.0, 18.5), 2),
             gps_coordinates={
-                "latitude": round(random.uniform(9.0, 9.1), 5),  # Simulated local zone
+                "latitude": round(random.uniform(9.0, 9.1), 5),
                 "longitude": round(random.uniform(7.4, 7.5), 5)
             }
         )
         
-        # Output the serialized JSON payload
-        print(f"📡 [SENDING] {payload.model_dump_json()}")
+                # Instead of just printing, we grab the raw dictionary and pass it to Kafka
+        data_to_send = payload.model_dump()
         
-        # Wait 2 seconds before sending the next telemetry interval
+        send_telemetry_to_kafka(
+            topic="fleet_telemetry",
+            key=payload.vehicle_id, # Partitioning Key
+            payload_dict=data_to_send
+        )
+        # ---------------------------
+        
         await asyncio.sleep(2.0)
 
 # 3. Main Orchestrator to Run Concurrent Tasks
@@ -72,5 +74,5 @@ if __name__ == "__main__":
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
-        print("\nSimulation terminated by user.")
-
+        print("\nSimulation terminated by user. Flushing producer buffers...")
+        producer.flush() # Forces outstanding messages to be delivered before shutting down
