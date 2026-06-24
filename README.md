@@ -23,21 +23,24 @@ The pipeline maps directly to standard modern real-time data platform architectu
 
 ### 1. Boot up the Streaming Infrastructure
 Ensure Docker Desktop is active on your machine, then spin up the containerized message broker:
-```bash
+
+```
+bash
 docker compose up -d
+```
 
 To verify the health and listeners of the broker, monitor the internal logs:
-
+```
 Bash
 docker logs fleet-kafka
-
+```
 ### 2. Initialize the Stream Generator
 Activate your virtual environment and execute the asynchronous stream engine:
-
+```
 Bash
 source venv/bin/activate
 python -m ingestion.async_simulator
-
+```
 ## 📈 Milestone Achievements: Phase 1 & 2 Complete
 
 [x] Engineered concurrent data production mimicking 50+ individual edge devices.
