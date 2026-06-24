@@ -58,16 +58,15 @@ async def simulate_truck(vehicle_id: str, is_anomaly_vehicle: bool = False):
 
 # 3. Main Orchestrator to Run Concurrent Tasks
 async def main():
-    # Generate unique UUIDs for 5 distinct vehicles to start small
-    fleet_ids = [str(uuid.uuid4())[:8] for _ in range(5)]
+    # Make sure we generate distinct IDs for each task loop
+    fleet_ids = [f"truck_id_{i}" for i in range(5)] # Produces: truck_id_0, truck_id_1, etc.
+    print(f"Initialized Fleet IDs for tracking: {fleet_ids}")
     
-    # Designate the first vehicle as our anomaly generator
     tasks = []
     for idx, vehicle_id in enumerate(fleet_ids):
         is_anomaly = (idx == 0) 
         tasks.append(simulate_truck(vehicle_id, is_anomaly_vehicle=is_anomaly))
     
-    # Run all vehicle simulations concurrently
     await asyncio.gather(*tasks)
 
 if __name__ == "__main__":

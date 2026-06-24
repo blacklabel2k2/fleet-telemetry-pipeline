@@ -23,22 +23,21 @@ def delivery_report(err, msg):
 
 # 3. Dedicated transmission function
 def send_telemetry_to_kafka(topic: str, key: str, payload_dict: dict):
-    """Serializes and sends a dictionary payload to a specific Kafka topic."""
     try:
-        # Serialize the dictionary back to a JSON string
+        # Convert key securely to a string and strip any invisible whitespaces
+        string_key = str(key).strip()
+        
+        # DEBUG PRINT: Verify what key is being passed
+        print(f"DEBUG: Sending message with Key: '{string_key}'")
+        
         value_bytes = json.dumps(payload_dict).encode('utf-8')
         
-        # Produce message asynchronously
-        # CRITICAL: We use 'key=key' (vehicle_id). This guarantees that logs
-        # from the exact same truck always land in the same partition!
         producer.produce(
             topic=topic,
-            key=key.encode('utf-8'),
+            key=string_key.encode('utf-8'), # Explicitly passing encoded string bytes
             value=value_bytes,
             callback=delivery_report
         )
-        
-        # Serve delivery callbacks from the background queue
         producer.poll(0)
     except Exception as e:
         print(f"Internal Producer Exception: {e}")
