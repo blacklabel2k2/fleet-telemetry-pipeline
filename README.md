@@ -39,6 +39,7 @@ source venv/bin/activate
 python -m ingestion.async_simulator
 
 ## 📈 Milestone Achievements: Phase 1 & 2 Complete
+
 [x] Engineered concurrent data production mimicking 50+ individual edge devices.
 
 [x] Established strict validation guards preventing malformed JSON ingestion.
