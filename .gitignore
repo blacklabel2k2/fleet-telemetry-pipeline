@@ -19,3 +19,12 @@ checkpoint/
 spark-warehouse/
 derby.log
 metastore_db/
+
+# Ignore local python virtual environments
+venv/
+.venv/
+__pycache__/
+*.pyc
+
+# Ignore local Data Lakehouse storage layers and data files
+storage/
