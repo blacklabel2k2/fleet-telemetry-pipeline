@@ -52,8 +52,7 @@ async def simulate_truck(vehicle_id: str, is_anomaly_vehicle: bool = False):
             key=payload.vehicle_id, # Partitioning Key
             payload_dict=data_to_send
         )
-        # ---------------------------
-        
+               
         await asyncio.sleep(2.0)
 
 # 3. Main Orchestrator to Run Concurrent Tasks
