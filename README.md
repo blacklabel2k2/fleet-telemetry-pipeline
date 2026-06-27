@@ -1,52 +1,96 @@
-# AI-Powered IoT Fleet Logistics & Predictive Maintenance Pipeline
+# Real-Time Event-Driven IoT Fleet Telemetry & Predictive Maintenance Pipeline
 
-A production-grade, end-to-end data engineering and AI system that processes real-time telemetry streams from a commercial vehicle fleet to predict components at risk of failure.
+## 📌 Project Overview
+This project is a production-grade, real-time streaming data pipeline designed to ingest, process, and analyze continuous IoT telemetry data from a large logistics vehicle fleet. Built using a **Medallion Lakehouse Architecture (Bronze ➔ Silver)**, the system processes high-velocity sensor data (engine temperatures, vibration amplitudes, fuel flow rates, and GPS coordinates) to establish an AI-ready data foundation for predictive maintenance models.
 
-## 🏗️ System Architecture Overview
-The pipeline maps directly to standard modern real-time data platform architectures:
+---
 
-
-
-[async_simulator.py] ──▶ [producer.py] ──▶ [Kafka Broker (Topic: fleet_telemetry)]
-├── Partition 0
-├── Partition 1
-├── Partition 2
-└── Partition 3
+## 🏗️ System Architecture & Data Flow
 
 
-## 🛠️ Tech Stack & Core Infrastructure
-* **Ingestion:** Asynchronous Python (utilizing `asyncio` for concurrent device simulation).
-* **Data Quality Layer:** `Pydantic` for strict type and schema validation.
-* **Message Broker:** `Apache Kafka` deployed via containerized `Docker Compose` architecture, utilizing 4 distinct partitions for balanced processing.
 
-## 🏃‍♂️ How to Run the Infrastructure Local Environment
+The data journey through the pipeline is decoupled into three structural milestones:
 
-### 1. Boot up the Streaming Infrastructure
-Ensure Docker Desktop is active on your machine, then spin up the containerized message broker:
+1. **Intelligent Edge Ingestion:** An asynchronous simulator models 50+ vehicles concurrently broadcasting data. A strict data firewall enforces schemas at the edge before hitting the network.
+2. **Distributed Message Buffering:** A Dockerized message broker acts as a high-speed shock absorber, distributing incoming messages evenly across parallel lanes using deterministic key routing.
+3. **Structured Lakehouse Processing:** A local distributed computing engine runs continuous multi-stream queries to process data in micro-batches, archiving raw streams and refining them into typed, deduplicated historical records.
 
+---
+
+## 🛠️ Tech Stack & Infrastructure
+* **Language:** Python 3.10+
+* **Concurrency:** Asyncio (for high-throughput simulation)
+* **Data Validation:** Pydantic v2 (Strict runtime schema enforcement)
+* **Containerization:** Docker & Docker Compose
+* **Message Broker:** Apache Kafka (Distributed event streaming)
+* **Compute Engine:** Apache Spark 3.5.0 (PySpark Structured Streaming)
+* **Storage Layer:** Delta Lake 3.2.0 (ACID compliant storage over Parquet)
+
+---
+
+## 💾 Lakehouse Data Layer Definitions
+
+### 1. Bronze Layer (`storage/bronze_fleet_telemetry`)
+* **Type:** Append-Only Archive
+* **Format:** Delta Lake
+* **Description:** Acts as the immutable "Source of Truth." It preserves the original, unaltered raw binary payloads directly from the message broker alongside infrastructure metadata timestamps. This guarantees that historical state can be replayed perfectly in the event of an upstream disaster or schema change.
+
+### 2. Silver Layer (`storage/silver_fleet_telemetry`)
+* **Type:** Cleaned & Enforced Analytical Table
+* **Format:** Delta Lake
+* **Description:** The refined data zone. This layer applies three major data refinery concepts in real time:
+  * **JSON Schema Parsing:** Unpacks binary JSON bytes and casts fields into precise data types (`DoubleType`, `TimestampType`).
+  * **10-Minute Watermarking:** Manages late-arriving packets by keeping a rolling state window open for delayed network transmissions while protecting local memory.
+  * **Streaming Deduplication:** Drops duplicate events caused by network retries based on a unique composite key (`vehicle_id` + `event_timestamp`).
+
+---
+
+## 🚀 Local Deployment Guide
+
+### Prerequisites
+Ensure you have the following installed on your machine:
+* Docker & Docker Compose
+* Python 3.10+
+* Java OpenJDK 11 or 17 (Required for running the local Apache Spark engine)
+
+### 1. Environment Setup
+Clone the repository and spin up a Python virtual environment:
+```bash
+git clone <your-repository-url>
+cd fleet-telemetry-pipeline
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
 ```
-bash
+### 2. Launch Infrastructure (Kafka)
+Spin up the decoupled messaging layer containers in the background:
+
+```bash
 docker compose up -d
 ```
 
-To verify the health and listeners of the broker, monitor the internal logs:
-```
-Bash
-docker logs fleet-kafka
-```
-### 2. Initialize the Stream Generator
-Activate your virtual environment and execute the asynchronous stream engine:
-```
-Bash
-source venv/bin/activate
+### 3. Run the Streaming Pipeline
+Open two separate terminal windows with your virtual environment active.
+* Terminal 1 (Data Generation): Launch the edge simulator to start streaming telemetry:
+``` bash
 python -m ingestion.async_simulator
 ```
-## 📈 Milestone Achievements: Phase 1 & 2 Complete
+* Terminal 2 (Distributed Processor): Launch the Spark engine to continuously update your Bronze and Silver Delta tables:
+``` bash
+python -m processing.spark_stream_processor
+```
 
-[x] Engineered concurrent data production mimicking 50+ individual edge devices.
+### Verifying Storage
+Your storage directory will automatically generate the following schema blueprint:
+``` plaintext
+storage/
+├── checkpoints/
+│   ├── bronze/
+│   └── silver/
+├── bronze_fleet_telemetry/
+│   └── _delta_log/
+└── silver_fleet_telemetry/
+    └── _delta_log/
 
-[x] Established strict validation guards preventing malformed JSON ingestion.
-
-[x] Configured deterministic partition routing using the vehicle identifier as the message key.
-
-[x] Implemented a self-healing broker recovery process using Docker volumes.
+```
+To run static smoke tests on your storage layers, execute python test_read_silver.py.
