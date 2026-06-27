@@ -43,6 +43,10 @@ The data journey through the pipeline is decoupled into three structural milesto
   * **10-Minute Watermarking:** Manages late-arriving packets by keeping a rolling state window open for delayed network transmissions while protecting local memory.
   * **Streaming Deduplication:** Drops duplicate events caused by network retries based on a unique composite key (`vehicle_id` + `event_timestamp`).
 
+### 3. Gold Layer (`storage/gold_fault_features`)
+* **Type:** Real-Time Feature Aggregation Table
+* **Format:** Delta Lake
+* **Description:** The business-intelligence and AI-primed zone. This layer reads continuously from the Silver stream and computes rolling 5-minute Tumbling Windows backed by a 10-minute watermark. It exposes real-time statistical metrics—such as engine temperature moving averages and vibration standard deviations (`vibration_anomaly_score`)—acting as a live feature store for downstream predictive maintenance Machine Learning models.
 ---
 
 ## 🚀 Local Deployment Guide
