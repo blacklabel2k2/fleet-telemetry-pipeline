@@ -64,7 +64,8 @@ def read_kafka_stream(spark: SparkSession, topic: str) -> any:
         .option("kafka.bootstrap.servers", "localhost:9092")
         .option("subscribe", topic)
         # Start reading from the earliest available message in the topic
-        .option("startingOffsets", "earliest") 
+        .option("startingOffsets", "latest")
+        .option("failOnDataLoss", "false")
         .load()
     )
 def write_to_bronze(df, checkpoint_path: str, storage_path: str):
